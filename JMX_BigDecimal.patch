@@ -1,0 +1,51 @@
+--- zabbix-2.0.5.orig/src/zabbix_java/src/com/zabbix/gateway/JMXItemChecker.java	2013-02-13 03:36:14.000000000 -0800
++++ zabbix-2.0.5/src/zabbix_java/src/com/zabbix/gateway/JMXItemChecker.java	2013-03-11 12:08:07.000000000 -0700
+@@ -31,6 +31,7 @@
+ import javax.management.remote.JMXConnector;
+ import javax.management.remote.JMXConnectorFactory;
+ import javax.management.remote.JMXServiceURL;
++import java.math.BigDecimal;
+ 
+ import org.json.*;
+ 
+@@ -206,7 +207,15 @@
+ 		if (fieldNames.equals(""))
+ 		{
+ 			if (isPrimitiveAttributeType(dataObject.getClass()))
+-				return dataObject.toString();
++			{
++				logger.trace("-------->>>> found attribute value of a primitive type: {}", dataObject.toString());
++                try {
++                    return new BigDecimal(dataObject.toString()).toPlainString();
++                } catch(Exception e) {
++                    logger.trace("found attribute value of a primitive type: {}", dataObject.toString());
++                    return dataObject.toString();
++                }
++			}
+ 			else
+ 				throw new ZabbixException("data object type is not primitive: %s" + dataObject.getClass());
+ 		}
+@@ -254,7 +263,13 @@
+ 			counter.put("{#JMXATTR}", attrPath);
+ 			counter.put("{#JMXTYPE}", attribute.getClass().getName());
+ 			counter.put("{#JMXVALUE}", attribute.toString());
+-
++            logger.trace("-------->>>> found attribute value of a primitive type: {}", attribute.toString());
++            try {
++                counter.put("{#JMXVALUE}", new BigDecimal(attribute.toString()).toPlainString());
++            } catch(Exception e) {
++                counter.put("{#JMXVALUE}", attribute.toString());
++            }
++            logger.trace("-------->>>> put attribute value: {}", counter.get("{#JMXVALUE}"));
+ 			counters.put(counter);
+ 		}
+ 		else if (attribute instanceof CompositeData)
+@@ -276,7 +291,7 @@
+ 
+ 	private boolean isPrimitiveAttributeType(Class<?> clazz)
+ 	{
+-		Class<?>[] clazzez = {Boolean.class, Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class, String.class};
++		Class<?>[] clazzez = {Boolean.class, Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class, String.class, BigDecimal.class};
+ 
+ 		return HelperFunctionChest.arrayContains(clazzez, clazz);
+ 	}

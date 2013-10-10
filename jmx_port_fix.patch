@@ -1,0 +1,44 @@
+--- zabbix-2.0.3.orig/frontends/php/api/classes/CItemGeneral.php	2012-10-16 02:33:30.000000000 -0700
++++ zabbix-2.0.3/frontends/php/api/classes/CItemGeneral.php	2013-01-31 14:47:31.000000000 -0800
+@@ -412,7 +412,15 @@
+ 		}
+ 		// the item uses a specific type of interface
+ 		elseif ($type !== false) {
+-			$matchingInterface = (isset($typeInterface[$type])) ? $typeInterface[$type] : array();
++			foreach ($interfaces as $interface) {
++				if($interface['type'] == $type && $interface['port'] == $item['port']) {
++					$matchingInterface = $interface;
++					break;
++				}
++			}
++			if(empty($matchingInterface)) {
++				$matchingInterface = (isset($typeInterface[$type])) ? $typeInterface[$type] : array();
++			}
+ 		}
+ 		// the item does not need an interface
+ 		else {
+--- zabbix-2.0.3.orig/frontends/php/include/views/configuration.item.edit.php	2012-10-16 02:33:26.000000000 -0700
++++ zabbix-2.0.3/frontends/php/include/views/configuration.item.edit.php	2013-01-31 14:48:06.000000000 -0800
+@@ -531,9 +531,11 @@
+ zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_SNMPV1, 'port');
+ zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_SNMPV2C, 'port');
+ zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_SNMPV3, 'port');
++zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_JMX, 'port');
+ zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_SNMPV1, 'row_port');
+ zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_SNMPV2C, 'row_port');
+ zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_SNMPV3, 'row_port');
++zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_JMX, 'row_port');
+ zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_IPMI, 'ipmi_sensor');
+ zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_IPMI, 'row_ipmi_sensor');
+ zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_SSH, 'authtype');
+--- zabbix-2.0.3.orig/frontends/php/items.php	2012-10-16 02:33:31.000000000 -0700
++++ zabbix-2.0.3/frontends/php/items.php	2013-01-31 14:48:06.000000000 -0800
+@@ -112,7 +112,7 @@
+ 	'snmp_oid' => array(T_ZBX_STR, O_OPT, null, NOT_EMPTY, 'isset({save})&&isset({type})&&'.IN(
+ 		ITEM_TYPE_SNMPV1.','.ITEM_TYPE_SNMPV2C.','.ITEM_TYPE_SNMPV3,'type'), _('SNMP OID')),
+ 	'port' => array(T_ZBX_STR, O_OPT, null,	BETWEEN(0, 65535), 'isset({save})&&isset({type})&&'.IN(
+-		ITEM_TYPE_SNMPV1.','.ITEM_TYPE_SNMPV2C.','.ITEM_TYPE_SNMPV3,'type'), _('Port')),
++		ITEM_TYPE_SNMPV1.','.ITEM_TYPE_SNMPV2C.','.ITEM_TYPE_SNMPV3.','.ITEM_TYPE_JMX,'type'), _('Port')),
+ 	'snmpv3_securitylevel' =>	array(T_ZBX_INT, O_OPT, null,	IN('0,1,2'),
+ 		'isset({save})&&(isset({type})&&({type}=='.ITEM_TYPE_SNMPV3.'))'),
+ 	'snmpv3_securityname' =>	array(T_ZBX_STR, O_OPT, null,	null,
